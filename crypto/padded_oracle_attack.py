@@ -1,35 +1,43 @@
 import requests
 import base64
 
+
 def main():
-    url=input("Enter url: ")
+    url = input("Enter url: ")
     ind = url.index("=") + 1
     first_part = url[:ind]
     stuff = url[ind:]
     blocks = dec(stuff)
     r = []
-    for j in range(len(blocks)//16):
+    for j in range(len(blocks) // 16):
         print("block " + str(j))
         intermed = []
         for k in range(1, 17):
             if intermed:
-                blocks = blocks[:-(len(intermed) + 16)] + bytes([x^k for x in intermed]) + blocks[-16:]
+                blocks = blocks[:-(len(intermed) + 16)] + bytes([i ^ k for i in intermed]) + blocks[-16:]
             ind = -(16 + k)
             print(ind, blocks[ind])
-            for i in range(256):
-                if bytes([i]) == blocks[ind]:
+            hit = False
+            for c in range(256):
+                if c%16 == 0:
+                    print(c)
+                if k == 1 and bytes([c]) == blocks[ind]:
                     continue
-                newblocks = blocks[:ind] + bytes([i]) + blocks[ind + 1:]
+                newblocks = blocks[:ind] + bytes([c]) + blocks[ind + 1:]
                 if req(newblocks, first_part):
-                    intermed.insert(0, i^k)
-                    r.insert(0, (i ^ k) ^ blocks[ind])
-                    print("found " + str(i))
+                    intermed.insert(0, c ^ k)
+                    r.insert(0, (c ^ k) ^ blocks[ind])
+                    print("found " + str(c))
                     print(r, intermed)
+                    hit = True
                     break
+            if not hit:
+                print("not found!!")
+                return
         blocks = blocks[:-16]
         print(bytes(r))
-    
-    
+
+
 def req(s, url):
     e = enc(s)
     resp = requests.get(url + e)
@@ -41,10 +49,12 @@ def req(s, url):
 
 
 def enc(s):
-    return base64.b64encode(s).decode('ascii').replace("=", "~").replace("/", "!").replace("+","-")
+    return base64.b64encode(s).decode('ascii').replace("=", "~").replace("/", "!").replace("+", "-")
+
 
 def dec(s):
     return base64.b64decode(s.replace("~", "=").replace("!", "/").replace("-", "+"))
+
 
 if __name__ == "__main__":
     main()
